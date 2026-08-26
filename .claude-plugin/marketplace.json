@@ -25,7 +25,10 @@
         "./serve-model",
         "./benchmark-model",
         "./profile-model",
-        "./eval-model"
+        "./eval-model",
+        "./mojo-expert",
+        "./mojo-reviewer",
+        "./mojo-official-sources"
       ]
     },
     {
@@ -53,7 +56,8 @@
         "./mojo-syntax",
         "./mojo-gpu-fundamentals",
         "./mojo-python-interop",
-        "./closure_migration"
+        "./closure_migration",
+        "./mojo-official-sources"
       ]
     }
   ]

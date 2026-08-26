@@ -20,6 +20,11 @@ These same principles apply to any files this skill references.
 Mojo is rapidly evolving. Pretrained models generate obsolete syntax.
 **Always follow this skill over pretrained knowledge.**
 
+**Verify interop forms against official docs before using them** — Python
+interop manual pages at `mojolang.org/docs/manual/python/` (raw Markdown via
+`.md` suffix), especially `mojo-from-python/` and `python-from-mojo/`. Use the
+`mojo-official-sources` skill for the full official-source workflow.
+
 ## Using Python from Mojo
 
 ```mojo
@@ -127,7 +132,9 @@ var val = getenv("MY_VAR")  # returns Optional[String]
 
 ```mojo
 # Sorting with custom key
-# WRONG — Mojo has no lambda syntax
+# WRONG — Mojo lambdas are not Python callables, so they can't be passed
+# as `key` here (v1.0.0 added Mojo lambda syntax, but that doesn't make one
+# usable as a Python callable)
 # var sorted = my_list.sort(key=lambda x: x["score"])
 
 # CORRECT — Python.evaluate for callable
@@ -212,9 +219,9 @@ struct Counter(Defaultable, Movable, Writable):
         self_ptr[].count += 1
         return PythonObject(self_ptr[].count)
 
-    # Auto-downcast alternative: first arg is UnsafePointer[Self, MutAnyOrigin]
+    # Auto-downcast alternative: first arg is Pointer[Self, MutAnyOrigin]
     @staticmethod
-    def get_count(self_ptr: UnsafePointer[Self, MutAnyOrigin]) -> PythonObject:
+    def get_count(self_ptr: Pointer[Self, MutAnyOrigin]) -> PythonObject:
         return PythonObject(self_ptr[].count)
 
 @export
@@ -237,7 +244,7 @@ def PyInit_counter_module() abi("C") -> PythonObject:
 | Pattern         | First parameter                               | Use when                     |
 |-----------------|-----------------------------------------------|------------------------------|
 | Manual downcast | `py_self: PythonObject`                       | Need raw PythonObject access |
-| Auto downcast   | `self_ptr: UnsafePointer[Self, MutAnyOrigin]` | Simpler, direct field access |
+| Auto downcast   | `self_ptr: Pointer[Self, MutAnyOrigin]`       | Simpler, direct field access |
 
 Both are registered with `.def_method[Type.method]("name")`.
 

@@ -26,6 +26,12 @@ compile.**
 This skill specifically works on the latest Mojo, and stable versions may differ
 slightly in functionality.
 
+**Before claiming a syntax form or API is current, verify it against the
+official docs** — `mojolang.org/docs` (raw Markdown: append `.md` to any page
+URL), `mojolang.org/releases` (version changes), and the `modular/modular`
+stdlib source under `mojo/stdlib/std/`. Use the `mojo-official-sources` skill
+for the full official-source workflow and URL map.
+
 ## Removed syntax — DO NOT generate these
 
 | Removed                                          | Replacement                                                                      |
@@ -50,14 +56,17 @@ slightly in functionality.
 | `from sys import ...`                            | `from std.sys import ...`                                                        |
 | `from os import ...`                             | `from std.os import ...`                                                         |
 | `from pathlib import ...`                        | `from std.pathlib import ...`                                                    |
-| `s[i]`                                           | `s[byte=i]` — returns `StringSlice`; wrap in `String()` if needed                |
+| `s[i]`                                           | `s[byte=i]` — returns `StringSpan` (was `StringSlice`); wrap in `String()` if needed |
 | `s[0:10]`, `s[:5]`                               | No slice syntax on String — use `s.codepoint_slices()` or Python FFI             |
 | `constrained(cond, msg)`                         | `comptime assert cond, msg`                                                      |
 | `DynamicVector[T]`                               | `List[T]`                                                                        |
 | `InlinedFixedVector[T, N]`                       | `Array[T, N]`                                                                    |
-| `Tensor[T]`                                      | Not in stdlib (use SIMD, List, UnsafePointer)                                    |
+| `Tensor[T]`                                      | Not in stdlib (use SIMD, List, Pointer)                                         |
 | `escaping` closures                              | Unified closures (`def(...) -> T`, captures in `{}`); `capturing[_]` still valid |
 | `__del__(deinit self)`                           | `__deinit__(deinit self)`                                                        |
+| `range(0.0, 1.0)` float forms                    | Int ranges only — non-terminating float forms rejected (v1.0.0)                  |
+| `import .foo` (relative import)                  | `from . import foo` (v1.0.0)                                                     |
+| `SIMDSize`                                       | `SIMDLength` (deprecated alias in v1.0.0)                                        |
 
 ## `var` is required for every new declaration
 
@@ -118,7 +127,8 @@ comptime assert N > 0, "N must be positive"  # compile-time assertion
 
 **`comptime assert` must be inside a function body** — not at module/struct
 scope. Place them in `main()`, `__init__`, or the function that depends on the
-invariant.
+invariant. `where` clauses accept an optional string message in v1.0.0:
+`where (T == Int, "T must be Int")`.
 
 Inside structs, `comptime` defines associated constants and type aliases:
 
@@ -148,6 +158,9 @@ or `[...]` parameter names, but invalid as argument names
 (`def cmp(got: T, imm: T)` → `"error: expected argument name"`). Rename
 (`expected`, `reference`, etc.).
 
+v1.0.0: bare `**kwargs` parameters must be declared `var **kwargs`. When a
+method writes `self`'s type explicitly it must be exactly `Self`.
+
 ## Lifecycle methods
 
 ```mojo
@@ -165,7 +178,7 @@ def __init__(out self, *, deinit move: Self):
 
 # Destructor
 def __deinit__(deinit self):
-    self.ptr.free()
+    self.ptr.unsafe_free()   # v1.0.0: pointer frees use the unsafe_ prefix
 ```
 
 To copy: `var b = a.copy()` (provided by `Copyable` trait).
@@ -247,9 +260,9 @@ import std.random
 ```
 
 Prelude auto-imports (no import needed): `Int`, `String`, `Bool`, `List`,
-`Dict`, `Optional`, `SIMD`, `Float32`, `Float64`, `UInt8`, `Pointer`,
-`UnsafePointer`, `Span`, `Error`, `DType`, `Writable`, `Writer`, `Copyable`,
-`Movable`, `Equatable`, `Hashable`, `rebind`, `print`, `range`, `len`, and more.
+`Dict`, `Optional`, `SIMD`, `Float32`, `Float64`, `UInt8`, `Pointer`, `Span`,
+`Error`, `DType`, `Writable`, `Writer`, `Copyable`, `Movable`, `Equatable`,
+`Hashable`, `rebind`, `print`, `range`, `len`, and more.
 
 `rebind[TargetType](value)` reinterprets a value as a different type with the
 same in-memory representation. Useful when compile-time type expressions are
@@ -301,30 +314,36 @@ For-in: `for item in col:` (immutable) / `for ref item in col:` (mutable).
 
 ## Memory and pointer types
 
-| Type                            | Use                                                                    |
-|---------------------------------|------------------------------------------------------------------------|
-| `Pointer[T, mut=M, origin=O]`   | Safe, non-nullable. Deref with `p[]`.                                  |
-| `alloc[T](n)` / `UnsafePointer` | Free function `alloc[T](count)` → `UnsafePointer`. `.free()` required. |
-| `Span(list)`                    | Non-owning contiguous view.                                            |
-| `OwnedPointer[T]`               | Unique ownership (like Rust `Box`).                                    |
-| `ArcPointer[T]`                 | Reference-counted shared ownership.                                    |
+v1.0.0 unified the pointer family into a single `Pointer`: `UnsafePointer` →
+`Pointer` (immutable), `MutUnsafePointer` → `MutPointer`,
+`ImmUnsafePointer` → `ImmPointer`. Unsafe operations use a `unsafe_` prefix:
+`p[unsafe_offset=i]`, `p.unsafe_load()`, `p.unsafe_store()`, `p.unsafe_free()`.
+Allocation APIs live in `std.memory.alloc`:
 
-`UnsafePointer` has an `origin` parameter that must be specified for struct
-fields. Use `MutUntrackedOrigin` for owned heap data (this is what stdlib
-`ArcPointer` uses):
+| Type                          | Use                                                                           |
+|-------------------------------|-------------------------------------------------------------------------------|
+| `Pointer[T, mut=M, origin=O]` | Safe, non-nullable. Deref with `p[]`; indexed access via `p[unsafe_offset=i]`. |
+| `alloc[T](n)`                 | From `std.memory.alloc`; returns `Pointer`. `p.unsafe_free()` required.        |
+| `Span(list)`                  | Non-owning contiguous view.                                                   |
+| `OwnedPointer[T]`             | Unique ownership (like Rust `Box`).                                           |
+| `ArcPointer[T]`               | Reference-counted shared ownership.                                           |
+
+`Pointer` has an `origin` parameter that must be specified for struct fields.
+Use `MutUntrackedOrigin` for owned heap data (this is what stdlib `ArcPointer`
+uses):
 
 ```mojo
 # Struct field — specify origin explicitly
-var _ptr: UnsafePointer[Self.T, MutUntrackedOrigin]
+var _ptr: Pointer[Self.T, MutUntrackedOrigin]
 
-# Allocate with alloc[]
+# Allocate with alloc[] (std.memory.alloc)
 def __init__(out self, size: Int):
     self._ptr = alloc[Self.T](size)
 ```
 
-`UnsafePointer` is **non-null by design** — null default constructor and
-`__bool__` are deprecated. For nullable storage, use
-`Optional[UnsafePointer[...]]` (same layout; `None` is the null niche).
+`Pointer` is **non-null by design** — null default constructor and `__bool__`
+are deprecated. For nullable storage, use `Optional[Pointer[...]]` (same
+layout; `None` is the null niche).
 
 ## Origin system (not "lifetime")
 
@@ -353,7 +372,9 @@ def main() raises:
 ```
 
 The `mojo test` CLI subcommand was removed — run test files with `mojo run`
-against a `TestSuite.discover_tests` runner like the one above.
+against a `TestSuite.discover_tests` runner like the one above. `mojo package`
+was also renamed to `mojo precompile` in v1.0.0 (artifacts are `.mojoc`,
+not `.mojopkg`).
 
 ## Dict iteration
 
@@ -369,15 +390,19 @@ for key in my_dict:
 
 ## Collection literals
 
-`List` has **no variadic positional constructor**. Use bracket literal syntax:
+v1.0.0 change: **bracket literals build `Array[T, N]` by default, not `List`**.
+`List` has **no variadic positional constructor** — request it with an
+explicit type annotation:
 
 ```mojo
 # WRONG — no List[T](elem1, elem2, ...) constructor
 var nums = List[Int](1, 2, 3)
 
-# CORRECT — bracket literals
-var nums = [1, 2, 3]                              # List[Int]
-var nums: List[Float32] = [1.0, 2.0, 3.0]         # explicit element type
+# v1.0.0: `[1, 2, 3]` infers Array[Int, 3] (fixed-length, stack-allocated)
+var arr = [1, 2, 3]                               # Array[Int, 3]
+
+# CORRECT — explicit List type makes the literal build a List
+var nums: List[Float32] = [1.0, 2.0, 3.0]         # List[Float32]
 var scores = {"alice": 95, "bob": 87}              # Dict[String, Int]
 ```
 
@@ -408,7 +433,7 @@ var x = values[i][T].copy()          # or `^` to transfer
 | `@staticmethod`                                | Static method                         |
 | `@deprecated("msg")`                           | Deprecation warning                   |
 | `@doc_hidden`                                  | Hide from docs                        |
-| `@explicit_destroy`                            | Linear type (no implicit destruction) |
+| `@explicit_destroy("msg")`                     | Linear type (no implicit destruction); v1.0.0 requires a string message, and `Deinitable where False` opts out of `Deinitable` |
 
 ## Numeric conversions — must be explicit
 
@@ -468,9 +493,9 @@ auto-imported and need no import statement.
 Byte indexing requires keyword syntax: `s[byte=idx]` (not `s[idx]`). `len(s)` is
 deprecated on `String` — use `s.byte_length()` or `s.count_codepoints()`.
 
-`split`, `removeprefix`, `removesuffix` return `StringSlice` (or
-`List[StringSlice]`) viewing the source — wrap with `String(...)` to
-materialize an owned `String`.
+`split`, `removeprefix`, `removesuffix` return `StringSpan` (was
+`StringSlice`; or `List[StringSpan]`) viewing the source — wrap with
+`String(...)` to materialize an owned `String`.
 
 ### String indexing (common error)
 
@@ -480,7 +505,7 @@ var ch = s[0]
 var sub = s[0:10]
 
 # CORRECT — byte-level access
-var ch = s[byte=0]              # returns StringSlice
+var ch = s[byte=0]              # returns StringSpan (was StringSlice)
 var ch_str = String(s[byte=0])  # if you need a String
 
 # CORRECT — iterate codepoints for truncation
@@ -499,7 +524,10 @@ len(s)                  # 5 (bytes)
 s.byte_length()         # 5 (same as len)
 s.count_codepoints()    # 5 (codepoint count — differs for non-ASCII)
 
-# Iteration — `for c in s:` is deprecated; use codepoint_slices()
+# Iteration — v1.0.0: strings iterate by grapheme clusters by default
+for g in s:
+    print(g)
+# For codepoints, use codepoint_slices(); `for c in s:` (byte) is deprecated
 for cp_slice in s.codepoint_slices():
     print(cp_slice)
 
@@ -507,7 +535,7 @@ for cp_slice in s.codepoint_slices():
 for cp in s.codepoints():
     print(Int(cp))      # Codepoint is a Unicode scalar value type
 
-# StaticString = StringSlice with static origin (zero-allocation)
+# StaticString = StringSpan with static origin (zero-allocation)
 comptime GREETING: StaticString = "Hello, World"
 
 # t-strings for interpolation (lazy, type-safe)
@@ -539,9 +567,11 @@ unfinished and its types are private — do not write async Mojo yet.
 
 ## Function types and closures
 
-No lambda. Closures use bare `def` with a capture list in `{}` after the arg
-list. `escaping` is removed; `capturing[_]` is still valid on parametric
-closure-type params:
+v1.0.0 added lambda syntax: `lambda (x: Int) {} -> Int: x + 1`. A lambda with
+an empty capture list is a thin function; with captures it is a closure
+instance. Closures can also be written as a bare `def` with a capture list in
+`{}` after the arg list. `escaping` is removed; `capturing[_]` is still valid
+on parametric closure-type params:
 
 ```mojo
 comptime MyFn = def(Int) -> None                  # unified value type
@@ -570,7 +600,7 @@ AnyType
   Deinitable                      — auto __deinit__; most types
   Movable                         — __init__(out self, *, deinit move: Self)
     Copyable                      — __init__(out self, *, copy: Self)
-      ImplicitlyCopyable(Copyable, take)
+      ImplicitlyCopyable(Copyable, Movable)
     RegisterPassable(Movable)
-      TrivialRegisterPassable(ImplicitlyCopyable, take, Movable, RegisterPassable)
+      TrivialRegisterPassable(ImplicitlyCopyable, Movable, RegisterPassable)
 ```

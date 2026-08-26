@@ -65,6 +65,15 @@ Skills that cover writing Mojo and setting up a project:
   Pairs with `/mojo-syntax`.
 - [`/closure_migration`](closure_migration/SKILL.md): Migrates Mojo off legacy
   parametric / `@__parameter` closures onto value-taking unified closures.
+- [`/mojo-expert`](mojo-expert/SKILL.md): Writes Mojo for a given task, using
+  expert knowledge to optimize and accelerate code.
+- [`/mojo-reviewer`](mojo-reviewer/SKILL.md): Reviews code for correctness,
+  performance, and style, and suggests improvements.
+- [`/mojo-official-sources`](mojo-official-sources/SKILL.md): Pulls the latest
+  Mojo syntax, stdlib APIs, and release changes from official sources
+  (mojolang.org docs and releases, the modular/modular GitHub repo), verifying
+  bundled guidance against current truth. Use it to check whether a syntax form
+  or API is still current.
 
 ## Model lifecycle
 

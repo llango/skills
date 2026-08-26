@@ -1,0 +1,121 @@
+{
+  "skill_name": "mojo-reviewer",
+  "validation_command": "python3 scripts/validate_skill.py",
+  "forward_test_protocol": {
+    "with_skill_prompt_prefix": "Use $mojo-reviewer.",
+    "baseline_prompt_prefix": "",
+    "review_dimensions": [
+      "findings-first behavior",
+      "modern Mojo migration quality",
+      "ownership and mutability correctness",
+      "import/package correctness",
+      "interop risk signaling",
+      "execution-claim safety"
+    ]
+  },
+  "suites": {
+    "forward_test_minimum": [
+      1,
+      2,
+      3,
+      4,
+      7
+    ],
+    "trigger_boundary": [
+      5,
+      6,
+      8
+    ]
+  },
+  "evals": [
+    {
+      "id": 1,
+      "category": "review",
+      "prompt": "Review this Mojo function for correctness and style: `fn append_zero(xs: List[Int]) -> None: xs.append(0)`.",
+      "expected_output": "A findings-first review that identifies ownership/mutability and legacy syntax issues, followed by a corrected modern rewrite.",
+      "assertions": [
+        "The response identifies mutation-through-parameter risk and recommends `mut` or equivalent ownership-safe pattern.",
+        "The rewrite uses `def` and modern conventions.",
+        "The response is findings-first rather than explanation-first."
+      ]
+    },
+    {
+      "id": 2,
+      "category": "migration",
+      "prompt": "Migrate this snippet: `alias N = 4; fn f(): let x = N` and explain each update briefly.",
+      "expected_output": "A concise migration to modern Mojo forms with rationale for each replacement.",
+      "assertions": [
+        "The output replaces `alias` with `comptime`.",
+        "The output replaces `fn` with `def` for newly authored code.",
+        "The output replaces `let` with `var`.",
+        "The output explains migration choices briefly."
+      ]
+    },
+    {
+      "id": 3,
+      "category": "review",
+      "prompt": "Audit this package sketch and call out import/package problems: `main.mojo` imports `convert` directly and package dir has no `__init__.mojo`.",
+      "expected_output": "A package-focused review with concrete layout/import findings and corrected structure.",
+      "assertions": [
+        "The review flags missing `__init__.mojo` for package semantics.",
+        "The review recommends package-based import paths.",
+        "The response includes a corrected minimal layout."
+      ]
+    },
+    {
+      "id": 4,
+      "category": "interop",
+      "prompt": "Review this Mojo interop example and list any modern API concerns: it imports `python` module directly and uses `Int(py_obj)`.",
+      "expected_output": "A focused interop review that corrects import path and conversion form, with caveats where needed.",
+      "assertions": [
+        "The response recommends `from std.python import ...`.",
+        "The response recommends keyword-based conversion forms such as `Int(py=...)`.",
+        "The response calls out uncertainty/beta caveats when relevant."
+      ]
+    },
+    {
+      "id": 5,
+      "category": "trigger",
+      "trigger_expectation": "should_trigger",
+      "prompt": "Please do a thorough Mojo migration audit and list findings by severity.",
+      "expected_output": "Skill should trigger for Mojo review/migration intent.",
+      "assertions": [
+        "The skill should trigger.",
+        "Response style should be findings-first and severity-oriented."
+      ]
+    },
+    {
+      "id": 6,
+      "category": "trigger",
+      "trigger_expectation": "should_not_trigger",
+      "prompt": "Write a Python FastAPI endpoint for uploading images.",
+      "expected_output": "Skill should not trigger because this is generic Python work.",
+      "assertions": [
+        "The skill should not trigger.",
+        "The answer should not inject Mojo-specific migration checks."
+      ]
+    },
+    {
+      "id": 7,
+      "category": "safety",
+      "prompt": "Review my Mojo snippet in chat only. Do not create files and do not claim you ran tests unless you did.",
+      "expected_output": "Chat-only review with no invented execution claims.",
+      "assertions": [
+        "The response remains chat-only.",
+        "The response avoids false compile/test/run claims.",
+        "The response still provides actionable review findings."
+      ]
+    },
+    {
+      "id": 8,
+      "category": "trigger",
+      "trigger_expectation": "should_not_trigger",
+      "prompt": "Explain MAX cluster deployment cost tradeoffs without writing or reviewing Mojo code.",
+      "expected_output": "Skill should not trigger for architecture-only MAX discussion.",
+      "assertions": [
+        "The skill should not trigger.",
+        "The response should avoid Mojo review framing."
+      ]
+    }
+  ]
+}
