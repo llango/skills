@@ -26,6 +26,12 @@ compile.**
 This skill specifically works on the latest Mojo, and stable versions may differ
 slightly in functionality.
 
+**Before claiming a syntax form or API is current, verify it against the official
+docs** — `mojolang.org/docs` (raw Markdown: append `.md` to any page URL),
+`mojolang.org/releases` (version changes), and the `modular/modular` stdlib source
+under `mojo/stdlib/std/`. Use the `mojo-official-sources` skill for the full
+official-source workflow and URL map.
+
 ## Removed syntax — DO NOT generate these
 
 | Removed                                          | Replacement                                                                      |

@@ -19,12 +19,16 @@
         "./mojo-syntax",
         "./mojo-gpu-fundamentals",
         "./mojo-python-interop",
+        "./closure_migration",
         "./import-model",
         "./debug-model",
         "./serve-model",
         "./benchmark-model",
         "./profile-model",
-        "./eval-model"
+        "./eval-model",
+        "./mojo-expert",
+        "./mojo-reviewer",
+        "./mojo-official-sources"
       ]
     },
     {
@@ -51,7 +55,9 @@
         "./new-modular-project",
         "./mojo-syntax",
         "./mojo-gpu-fundamentals",
-        "./mojo-python-interop"
+        "./mojo-python-interop",
+        "./closure_migration",
+        "./mojo-official-sources"
       ]
     }
   ]

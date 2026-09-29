@@ -63,6 +63,17 @@ Skills that cover writing Mojo and setting up a project:
 - [`/mojo-python-interop`](mojo-python-interop/SKILL.md): Handles Mojo calling
   Python and Python calling Mojo, including building Python extension modules.
   Pairs with `/mojo-syntax`.
+- [`/closure_migration`](closure_migration/SKILL.md): Migrates Mojo off legacy
+  parametric / `@__parameter` closures onto value-taking unified closures.
+- [`/mojo-expert`](mojo-expert/SKILL.md): Writes Mojo for a given task, using
+  expert knowledge to optimize and accelerate code.
+- [`/mojo-reviewer`](mojo-reviewer/SKILL.md): Reviews code for correctness,
+  performance, and style, and suggests improvements.
+- [`/mojo-official-sources`](mojo-official-sources/SKILL.md): Pulls the latest
+  Mojo syntax, stdlib APIs, and release changes from official sources
+  (mojolang.org docs and releases, the modular/modular GitHub repo), verifying
+  bundled guidance against current truth. Use it to check whether a syntax form
+  or API is still current.
 
 ## Model lifecycle
 
@@ -80,10 +91,6 @@ it expects the model to be in:
   `--max-length`, `--task`, and `--trust-remote-code`. Use
   `--custom-architectures` for an architecture you ported with
   `/import-model`.
-- [`/migrate-max-v2-to-v3`](migrate-max-v2-to-v3/SKILL.md): Ports a model
-  written against the V2 graph API (`max.nn`, `TensorValue`, explicit `Graph`)
-  to ModuleV3 (`max.experimental.nn`), leaving the V2 code untouched and
-  verifying greedy outputs match.
 - [`/debug-model`](debug-model/SKILL.md): Takes over once a model loads and
   generates tokens but the output is wrong. Builds tensor-dump comparators and
   bisects serve versus pipeline. For crashes on load, use `/import-model`.
