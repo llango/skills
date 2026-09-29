@@ -386,8 +386,12 @@ struct Span[mut: Bool, //, T: AnyType, origin: Origin[mut=mut]]: ...
 ```
 
 Key types: `Origin`, `MutOrigin`, `ImmOrigin`, `MutAnyOrigin`,
-`ImmutAnyOrigin`, `MutUntrackedOrigin`, `ImmUntrackedOrigin`,
+`ImmAnyOrigin`, `MutUntrackedOrigin`, `ImmUntrackedOrigin`,
 `ImmStaticOrigin`. Use `origin_of(value)` to get a value's origin.
+
+(The `Immut*` spellings — `ImmutOrigin`, `ImmutAnyOrigin`,
+`ImmutUnsafeAnyOrigin` — and `StaticConstantOrigin` were removed in 1.1.0.
+Untracked replaces `External`: `MutExternalOrigin` → `MutUntrackedOrigin`.)
 
 ## Testing
 
