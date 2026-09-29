@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mojo Expert"
+  short_description: "Write, review, migrate, and debug current Mojo code"
+  default_prompt: "Use $mojo-expert to write or review current Mojo code with explicit std imports, accurate ownership guidance, and Modular-style package and interop patterns."
+
+policy:
+  allow_implicit_invocation: true

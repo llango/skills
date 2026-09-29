@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mojo Reviewer"
+  short_description: "Find and fix Mojo migration and review issues"
+  default_prompt: "Use $mojo-reviewer to run findings-first Mojo code review with modern syntax, ownership, import, package, and interop checks."
+
+policy:
+  allow_implicit_invocation: true
