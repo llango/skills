@@ -25,9 +25,11 @@ project and choose `max` or `mojo` as appropriate. Don't pin a version: each
 channel already resolves to the right one.
 
 MAX and Mojo ship together but number their releases differently, so their
-version strings don't look alike. On the stable channel, `max` is `26.5`
-while `mojo` is `1.0.0`; on nightly they're `26.6.0.dev*` and `1.1.0.dev*`.
-That's expected, not a mismatch.
+version strings don't look alike. On the stable channel, `max` is `26.6`
+while `mojo` is `1.1.0`; on nightly they're `26.7.0.dev*` and `1.2.0.dev*`.
+That's expected, not a mismatch. These numbers move with every release — check
+https://mojolang.org/releases/ and `pip index versions max` rather than
+trusting this sentence.
 
 > [!NOTE]
 > Mojo and MAX projects use `pixi`. The `magic` CLI is retired; its
@@ -209,8 +211,8 @@ conda install -c conda-forge \
 
 If using MAX with custom Mojo kernels, both must come from the same channel.
 Don't compare their version numbers: MAX and Mojo number releases
-differently, so a matching pair looks mismatched (stable is `max` `26.5`
-with `mojo` `1.0.0`).
+differently, so a matching pair looks mismatched (stable is `max` `26.6`
+with `mojo` `1.1.0`).
 
 ```bash
 # Check that both came from the same channel
